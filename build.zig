@@ -63,7 +63,7 @@ pub fn build(b: *std.Build) void {
     const snake_exe = b.addExecutable(.{
         .name = "snake",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/snake.zig"),
+            .root_source_file = b.path("src/snake/main.zig"),
             .target = target,
             .optimize = optimize,
             .imports = &.{
