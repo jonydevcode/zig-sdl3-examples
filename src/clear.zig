@@ -18,7 +18,7 @@ pub fn main(init: std.process.Init) void {
     var window: ?*sdl.SDL_Window = null;
     var renderer: ?*sdl.SDL_Renderer = null;
     if (!sdl.SDL_CreateWindowAndRenderer(
-        "example",
+        "examples/renderer/clear",
         960,
         540,
         sdl.SDL_WINDOW_RESIZABLE | sdl.SDL_WINDOW_HIGH_PIXEL_DENSITY,
@@ -29,6 +29,8 @@ pub fn main(init: std.process.Init) void {
     }
     defer sdl.SDL_DestroyWindow(window);
     defer sdl.SDL_DestroyRenderer(renderer);
+
+    _ = sdl.SDL_SetRenderLogicalPresentation(renderer, 960, 540, sdl.SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     // Main loop
     while (true) {
