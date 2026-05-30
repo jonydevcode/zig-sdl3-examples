@@ -59,4 +59,27 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         run_primitives_cmd.addArgs(args);
     }
+
+    const snake_exe = b.addExecutable(.{
+        .name = "snake",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/snake.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "zig_sdl3_examples", .module = mod },
+            },
+        }),
+    });
+    snake_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
+
+    b.installArtifact(snake_exe);
+
+    const run_snake = b.step("run-snake", "Run the example: snake");
+    const run_snake_cmd = b.addRunArtifact(snake_exe);
+    run_snake.dependOn(&run_snake_cmd.step);
+    run_snake_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_snake_cmd.addArgs(args);
+    }
 }
