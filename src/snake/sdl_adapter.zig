@@ -58,11 +58,9 @@ pub fn createWindowAndRenderer(
         &renderer,
     ));
 
-    if (window == null or renderer == null) return error.SdlFailure;
-
     return .{
-        .window = window.?,
-        .renderer = renderer.?,
+        .window = window orelse return error.SdlFailure,
+        .renderer = renderer orelse return error.SdlFailure,
     };
 }
 

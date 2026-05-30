@@ -2,7 +2,6 @@ const std = @import("std");
 const sdl = @import("sdl3");
 const sdl_adapter = @import("sdl_adapter.zig");
 const Game = @import("game.zig");
-const Io = std.Io;
 
 const step_rate_in_milliseconds = 125;
 const block_size_in_pixels = 24;
@@ -93,7 +92,7 @@ pub fn handleEvent(event: *sdl.SDL_Event, app_state: *AppState) AppStatus {
                 if (app_state.joystick == null) {
                     std.debug.print("Failed to open joystick ID {d}: {s}\n", .{
                         event.jdevice.which,
-                        sdl.SDL_GetError(),
+                        std.mem.span(sdl.SDL_GetError()),
                     });
                 }
             }
@@ -107,16 +106,10 @@ pub fn handleEvent(event: *sdl.SDL_Event, app_state: *AppState) AppStatus {
             }
         },
         sdl.SDL_EVENT_KEY_DOWN => {
-            switch (handleKeyEvent(&app_state.game, event.key.scancode)) {
-                .app_continue => {},
-                else => return .quit_failure,
-            }
+            return handleKeyEvent(&app_state.game, event.key.scancode);
         },
         sdl.SDL_EVENT_JOYSTICK_HAT_MOTION => {
-            switch (handleHatEvent(&app_state.game, event.jhat.value)) {
-                .app_continue => {},
-                else => return .quit_failure,
-            }
+            return handleHatEvent(&app_state.game, event.jhat.value);
         },
         else => {},
     }
@@ -134,9 +127,9 @@ pub fn tick(app_state: *AppState) !AppStatus {
         app_state.last_step += step_rate_in_milliseconds;
     }
 
-    var r: sdl.SDL_FRect = undefined;
-    r.w = block_size_in_pixels;
-    r.h = block_size_in_pixels;
+    var rect: sdl.SDL_FRect = undefined;
+    rect.w = block_size_in_pixels;
+    rect.h = block_size_in_pixels;
     try sdl_adapter.setRenderDrawColor(renderer, 0, 0, 0, sdl.SDL_ALPHA_OPAQUE);
     try sdl_adapter.renderClear(renderer);
 
@@ -145,24 +138,23 @@ pub fn tick(app_state: *AppState) !AppStatus {
             const cell = app_state.game.getCell(@intCast(x), @intCast(y));
             if (cell == .nothing)
                 continue;
-            setRectXY(&r, @floatFromInt(x), @floatFromInt(y));
+            setRectXY(&rect, @floatFromInt(x), @floatFromInt(y));
             if (cell == .food) {
                 try sdl_adapter.setRenderDrawColor(renderer, 80, 80, 255, sdl.SDL_ALPHA_OPAQUE);
             } else {
                 try sdl_adapter.setRenderDrawColor(renderer, 0, 128, 0, sdl.SDL_ALPHA_OPAQUE);
             }
-            try sdl_adapter.renderFillRect(renderer, &r);
+            try sdl_adapter.renderFillRect(renderer, &rect);
         }
     }
     try sdl_adapter.setRenderDrawColor(renderer, 255, 255, 0, sdl.SDL_ALPHA_OPAQUE);
-    setRectXY(&r, @floatFromInt(app_state.game.head.x), @floatFromInt(app_state.game.head.y));
-    try sdl_adapter.renderFillRect(renderer, &r);
+    setRectXY(&rect, @floatFromInt(app_state.game.head.x), @floatFromInt(app_state.game.head.y));
+    try sdl_adapter.renderFillRect(renderer, &rect);
     try sdl_adapter.renderPresent(renderer);
     return .app_continue;
 }
 
-pub fn main(init: std.process.Init) !void {
-    _ = init;
+pub fn main() !void {
     var prng: std.Random.DefaultPrng = .init(123456);
     const rng = prng.random();
 
@@ -197,13 +189,7 @@ pub fn main(init: std.process.Init) !void {
         sdl.SDL_LOGICAL_PRESENTATION_LETTERBOX,
     );
 
-    var app_state = AppState{
-        .game = .init(rng),
-        .last_step = sdl.SDL_GetTicks(),
-        .renderer = renderer,
-        .window = window,
-        .joystick = null,
-    };
+    var app_state = AppState.init(window, renderer, .init(rng), sdl.SDL_GetTicks(), null);
     defer app_state.deinit();
 
     var done = false;

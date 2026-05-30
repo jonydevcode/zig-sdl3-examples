@@ -1,7 +1,5 @@
 const Self = @This();
 const std = @import("std");
-const sdl = @import("sdl3");
-const sdl_adapter = @import("sdl_adapter.zig");
 
 pub const game_width = 24;
 pub const game_height = 18;
@@ -15,7 +13,7 @@ fn wrapDec(val: usize, max: usize) usize {
     return if (val == 0) max - 1 else val - 1;
 }
 
-const Cell = enum {
+pub const Cell = enum {
     nothing,
     body_moving_right, // at this cell, snake was moving right
     body_moving_up,
@@ -23,29 +21,59 @@ const Cell = enum {
     body_moving_down,
     food,
 
-    pub fn fromDirection(d: Direction) Cell {
-        switch (d) {
-            .right => return .body_moving_right,
-            .up => return .body_moving_up,
-            .left => return .body_moving_left,
-            .down => return .body_moving_down,
-        }
+    fn toDirection(self: Cell) ?Direction {
+        return switch (self) {
+            .body_moving_right => .right,
+            .body_moving_left => .left,
+            .body_moving_down => .down,
+            .body_moving_up => .up,
+            else => null,
+        };
     }
 };
 
-const Direction = enum {
+pub const Direction = enum {
     right,
     up,
     left,
     down,
+
+    fn toCell(self: Direction) Cell {
+        return switch (self) {
+            .right => .body_moving_right,
+            .up => .body_moving_up,
+            .left => .body_moving_left,
+            .down => .body_moving_down,
+        };
+    }
+
+    fn opposite(self: Direction) Direction {
+        return switch (self) {
+            .right => .left,
+            .left => .right,
+            .up => .down,
+            .down => .up,
+        };
+    }
+
+    fn forward(self: Direction, pos: Position) Position {
+        var next = pos;
+        switch (self) {
+            .right => next.x = wrapInc(next.x, game_width),
+            .up => next.y = wrapDec(next.y, game_height),
+            .left => next.x = wrapDec(next.x, game_width),
+            .down => next.y = wrapInc(next.y, game_height),
+        }
+        return next;
+    }
 };
 
-const GameResult = enum {
+pub const GameResult = enum {
     game_continues,
     game_ends,
 };
 
-const Position = struct {
+pub const Position = struct {
     x: usize,
     y: usize,
 };
@@ -108,12 +136,8 @@ pub fn newFoodPos(self: *Self) void {
 }
 
 pub fn setDirection(self: *Self, dir: Direction) void {
-    const cell = self.getCell(self.head.x, self.head.y);
-    if ((dir == .right and cell != .body_moving_left) or
-        (dir == .up and cell != .body_moving_down) or
-        (dir == .left and cell != .body_moving_right) or
-        (dir == .down and cell != .body_moving_up))
-    {
+    const cur_dir = self.getCell(self.head.x, self.head.y).toDirection() orelse return;
+    if (dir != cur_dir.opposite()) {
         self.next_dir = dir;
     }
 }
@@ -123,34 +147,24 @@ pub fn step(self: *Self) GameResult {
     self.inhibit_tail_step -= 1;
     if (self.inhibit_tail_step == 0) {
         self.inhibit_tail_step = 1;
-        const ct = self.getCell(self.tail.x, self.tail.y);
+        const tail_cell = self.getCell(self.tail.x, self.tail.y);
         self.putCell(self.tail.x, self.tail.y, .nothing);
-        switch (ct) {
-            .body_moving_right => self.tail.x = wrapInc(self.tail.x, game_width),
-            .body_moving_up => self.tail.y = wrapDec(self.tail.y, game_height),
-            .body_moving_left => self.tail.x = wrapDec(self.tail.x, game_width),
-            .body_moving_down => self.tail.y = wrapInc(self.tail.y, game_height),
-            else => {},
+        if (tail_cell.toDirection()) |dir| {
+            self.tail = dir.forward(self.tail);
         }
     }
 
     // move head forward
-    const prev_xpos: usize = self.head.x;
-    const prev_ypos: usize = self.head.y;
-    switch (self.next_dir) {
-        .right => self.head.x = wrapInc(self.head.x, game_width),
-        .up => self.head.y = wrapDec(self.head.y, game_height),
-        .left => self.head.x = wrapDec(self.head.x, game_width),
-        .down => self.head.y = wrapInc(self.head.y, game_height),
-    }
+    const prev_head = self.head;
+    self.head = self.next_dir.forward(self.head);
 
     // collisions
     const cell = self.getCell(self.head.x, self.head.y);
     if (cell != .nothing and cell != .food) {
         return .game_ends;
     }
-    self.putCell(prev_xpos, prev_ypos, Cell.fromDirection(self.next_dir));
-    self.putCell(self.head.x, self.head.y, Cell.fromDirection(self.next_dir));
+    self.putCell(prev_head.x, prev_head.y, self.next_dir.toCell());
+    self.putCell(self.head.x, self.head.y, self.next_dir.toCell());
     if (cell == .food) {
         if (self.isCellsFull()) return .game_ends;
         self.newFoodPos();
