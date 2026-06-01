@@ -4,11 +4,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const mod = b.addModule("zig_sdl3_examples", .{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
-    });
-
     const sdl = b.dependency("sdl", .{
         .optimize = optimize,
         .target = target,
@@ -20,9 +15,6 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/clear.zig"),
             .target = target,
             .optimize = optimize,
-            .imports = &.{
-                .{ .name = "zig_sdl3_examples", .module = mod },
-            },
         }),
     });
     clear_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
@@ -43,9 +35,6 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/primitives.zig"),
             .target = target,
             .optimize = optimize,
-            .imports = &.{
-                .{ .name = "zig_sdl3_examples", .module = mod },
-            },
         }),
     });
     primitives_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
@@ -66,9 +55,6 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/snake/main.zig"),
             .target = target,
             .optimize = optimize,
-            .imports = &.{
-                .{ .name = "zig_sdl3_examples", .module = mod },
-            },
         }),
     });
     snake_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
