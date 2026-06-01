@@ -1,6 +1,5 @@
 const Self = @This();
 const std = @import("std");
-// const sdl = @import("sdl.zig").c;
 const sdl = @import("sdl");
 const sdlx = @import("sdlx.zig");
 
@@ -32,6 +31,31 @@ fn loadShader(
     return shader;
 }
 
+fn logBasicInfo(gpu: *sdl.SDL_GPUDevice) !void {
+    const gpu_driver = sdl.SDL_GetGPUDeviceDriver(gpu) orelse return sdlx.die("SDL_GetGPUDeviceDriver");
+    std.debug.print("SDL_GPU backend: {s}\n", .{std.mem.span(gpu_driver)});
+
+    std.debug.print("Supported shader formats:", .{});
+    const supported_formats = sdl.SDL_GetGPUShaderFormats(gpu);
+    // vulkan
+    if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_SPIRV != 0) {
+        std.debug.print(" SPIR-V", .{});
+    }
+    // metal
+    if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_MSL != 0) {
+        std.debug.print(" MSL", .{});
+    }
+    // d3d12 (sm 6.0)
+    if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_DXIL != 0) {
+        std.debug.print(" DXIL", .{});
+    }
+    // d3d12 (sm 5.1)
+    if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_DXBC != 0) {
+        std.debug.print(" DXBC", .{});
+    }
+    std.debug.print("\n", .{});
+}
+
 window: *sdl.SDL_Window,
 gpu: *sdl.SDL_GPUDevice,
 frame_tex: *sdl.SDL_GPUTexture,
@@ -52,10 +76,11 @@ pub fn init(
     framebuffer: *[frame_width * frame_height]RGBA,
 ) !Self {
     const gpu = sdl.SDL_CreateGPUDevice(
-        sdl.SDL_GPU_SHADERFORMAT_SPIRV | sdl.SDL_GPU_SHADERFORMAT_MSL,
+        sdl.SDL_GPU_SHADERFORMAT_SPIRV | sdl.SDL_GPU_SHADERFORMAT_MSL | sdl.SDL_GPU_SHADERFORMAT_DXIL,
         true,
         null,
     ) orelse return sdlx.die("SDL_CreateGPUDevice");
+    try logBasicInfo(gpu);
 
     try sdlx.check(
         "SDL_ClaimWindowForGPUDevice",
@@ -71,7 +96,7 @@ pub fn init(
     };
 
     const supported_formats = sdl.SDL_GetGPUShaderFormats(gpu);
-    const shader_config: ShaderConfig = if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_MSL > 0)
+    const shader_config: ShaderConfig = if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_MSL != 0)
         ShaderConfig{
             .shader_format = sdl.SDL_GPU_SHADERFORMAT_MSL,
             .vertex_path = "shaders/fullscreen.vert.msl",
@@ -79,11 +104,19 @@ pub fn init(
             .vertex_entry = "FullscreenVS",
             .fragment_entry = "Chip8FS",
         }
-    else if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_SPIRV > 0)
+    else if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_SPIRV != 0)
         ShaderConfig{
             .shader_format = sdl.SDL_GPU_SHADERFORMAT_SPIRV,
             .vertex_path = "shaders/fullscreen.vert.spv",
             .fragment_path = "shaders/chip8.frag.spv",
+            .vertex_entry = "main",
+            .fragment_entry = "main",
+        }
+    else if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_DXIL != 0)
+        ShaderConfig{
+            .shader_format = sdl.SDL_GPU_SHADERFORMAT_DXIL,
+            .vertex_path = "shaders/fullscreen.vert.dxil",
+            .fragment_path = "shaders/chip8.frag.dxil",
             .vertex_entry = "main",
             .fragment_entry = "main",
         }
