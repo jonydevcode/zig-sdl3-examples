@@ -1,5 +1,5 @@
 const std = @import("std");
-const sdl = @import("sdl.zig").c;
+const sdl = @import("sdl");
 const sdlx = @import("sdlx.zig");
 const SdlGpu = @import("SdlGpu.zig");
 const RGBA = SdlGpu.RGBA;
@@ -54,6 +54,8 @@ fn handleEvent(event: *sdl.SDL_Event) EventResult {
 pub fn main() !void {
     try sdlx.check("SDL_Init", sdl.SDL_Init(sdl.SDL_INIT_VIDEO));
     defer sdl.SDL_Quit();
+
+    sdlx.printVersionToDebug();
 
     const window = sdl.SDL_CreateWindow(
         "SDL3 GPU API Test",

@@ -1,5 +1,5 @@
 const std = @import("std");
-const sdl = @import("sdl.zig").c;
+const sdl = @import("sdl");
 const sdl_adapter = @import("sdl_adapter.zig");
 const Game = @import("game.zig");
 

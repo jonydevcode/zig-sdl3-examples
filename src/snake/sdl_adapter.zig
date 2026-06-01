@@ -7,7 +7,7 @@
 //! trying to wrangle the C ABI-compatible function signature to Zig native types.
 //! Leaving this here as a note to self.
 const std = @import("std");
-const sdl = @import("sdl.zig").c;
+const sdl = @import("sdl");
 
 pub const SdlError = error{
     SdlFailure,

@@ -10,6 +10,18 @@ pub fn build(b: *std.Build) void {
     });
     const sdl_lib = sdl_dep.artifact("SDL3");
 
+    const translate_c = b.addTranslateC(.{
+        .root_source_file = b.path("src/c.h"),
+        .target = target,
+        .optimize = optimize,
+    });
+    // Swap the comment of the next two statements if using
+    // the system library instead of castholm's port
+    // translate_c.linkSystemLibrary("sdl3", .{
+    //     .use_pkg_config = .yes,
+    // });
+    translate_c.addIncludePath(sdl_dep.path("include"));
+
     const clear_exe = b.addExecutable(.{
         .name = "clear",
         .root_module = b.createModule(.{
@@ -18,6 +30,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    clear_exe.root_module.addImport("sdl", translate_c.createModule());
     clear_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(clear_exe);
     const run_clear = b.step("run-clear", "Run the example: clear");
@@ -36,6 +49,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    primitives_exe.root_module.addImport("sdl", translate_c.createModule());
     primitives_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(primitives_exe);
     const run_primitives = b.step("run-primitives", "Run the example: primitives");
@@ -54,6 +68,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    snake_exe.root_module.addImport("sdl", translate_c.createModule());
     snake_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(snake_exe);
     const run_snake = b.step("run-snake", "Run the example: snake");
@@ -72,6 +87,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    gpu_exe.root_module.addImport("sdl", translate_c.createModule());
     gpu_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(gpu_exe);
     const run_gpu = b.step("run-gpu", "Run the example: gpu");

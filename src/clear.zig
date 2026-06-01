@@ -1,8 +1,7 @@
 const std = @import("std");
-
 const Io = std.Io;
-
 const sdl = @import("sdl.zig").c;
+const sdlx = @import("sdlx.zig");
 
 pub fn main(init: std.process.Init) void {
     const io = init.io;
@@ -13,6 +12,7 @@ pub fn main(init: std.process.Init) void {
     }
     defer sdl.SDL_Quit();
 
+    sdlx.printVersionToDebug();
     std.debug.print("video driver: {s}\n", .{sdl.SDL_GetCurrentVideoDriver() orelse @as([*c]const u8, "null")});
 
     // Create a window and renderer
