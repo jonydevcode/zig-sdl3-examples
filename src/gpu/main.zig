@@ -15,6 +15,7 @@ const window_scale = 20;
 const update_interval_ms = 30;
 const update_interval_ns = update_interval_ms * 1_000_000;
 
+// `chip8_frame` is the RGBA representation of the CHIP-8 screen
 const RGBA = packed struct(u32) { r: u8, g: u8, b: u8, a: u8 };
 const black = RGBA{ .r = 0, .g = 0, .b = 0, .a = 0 };
 const white = RGBA{ .r = 255, .g = 255, .b = 255, .a = 255 };
@@ -248,17 +249,21 @@ pub fn main() !void {
         }
 
         if (needs_present) {
+            // Command buffer is like a GPU "to-do list".
+            // First, we "write down" the commands on this to-do list.
             const cmd = sdl.SDL_AcquireGPUCommandBuffer(gpu) orelse return sdlx.die("SDL_AcquireGPUCommandBuffer");
 
             if (framebuffer_dirty) {
                 buildRGBAFrame(&chip8_screen, &chip8_frame);
 
+                // Copy the 64x32 internal buffer to an upload buffer.
+                // `upload` is SDL_CreateGPUTransferBuffer created earlier.
                 const dst = sdl.SDL_MapGPUTransferBuffer(gpu, upload, true) orelse return sdlx.die("SDL_MapGPUTransferBuffer");
                 _ = sdl.SDL_memcpy(dst, &chip8_frame, chip8_frame.len * @sizeOf(RGBA));
                 sdl.SDL_UnmapGPUTransferBuffer(gpu, upload);
 
                 // Record a GPU copy operation into the command buffer
-                // i.e. copy the image bytes from upload into frame_tex.
+                // i.e. copy the image bytes from `upload` into `frame_tex`.
                 const copy = sdl.SDL_BeginGPUCopyPass(cmd);
                 sdl.SDL_UploadToGPUTexture(
                     copy,
@@ -279,6 +284,9 @@ pub fn main() !void {
                 framebuffer_dirty = false;
             }
 
+            // Acquire the next window image to draw into, also known as the
+            // `swapchain` texture. This is like the next blank page that will become
+            // visible in the window
             var maybe_swapchain: ?*sdl.SDL_GPUTexture = null;
             var out_w: u32 = 0;
             var out_h: u32 = 0;
@@ -289,8 +297,8 @@ pub fn main() !void {
                 &out_w,
                 &out_h,
             ));
-
             if (maybe_swapchain) |swapchain| {
+                // If a window image was acquired, record the draw commands.
                 const pass = sdl.SDL_BeginGPURenderPass(
                     cmd,
                     &sdl.SDL_GPUColorTargetInfo{
@@ -316,10 +324,13 @@ pub fn main() !void {
                 sdl.SDL_EndGPURenderPass(pass);
             }
 
+            // Submit the recorded GPU commands. After this, the CPU continues while the GPU
+            // works asynchronously.
             sdlx.check("SDL_SubmitGPUCommandBuffer", sdl.SDL_SubmitGPUCommandBuffer(cmd)) catch {};
             needs_present = false;
         }
     }
 
+    // Wait for the GPU to finish any queued work.
     try sdlx.check("SDL_WaitForGPUIdle", sdl.SDL_WaitForGPUIdle(gpu));
 }
