@@ -13,7 +13,7 @@ pub fn check(comptime name: []const u8, ok: bool) SdlError!void {
     }
 }
 
-pub fn die(comptime name: []const u8) SdlError!void {
+pub fn die(comptime name: []const u8) SdlError {
     std.log.err("{s} failed: {s}", .{ name, std.mem.span(sdl.SDL_GetError()) });
     return error.SdlFailure;
 }
