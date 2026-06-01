@@ -12,7 +12,7 @@ var chip8_screen = [_]bool{false} ** chip8_screen_pixels;
 const window_scale = 20;
 
 // How often to move the hot pixel in milliseconds
-const update_interval_ms = 30;
+const update_interval_ms = 16;
 const update_interval_ns = update_interval_ms * 1_000_000;
 
 // `chip8_frame` is the RGBA representation of the CHIP-8 screen
@@ -59,16 +59,9 @@ fn loadShader(
     return shader;
 }
 
-const ShaderConfig = struct {
-    shader_format: sdl.SDL_GPUShaderFormat,
-    vertex_path: [:0]const u8,
-    fragment_path: [:0]const u8,
-    vertex_entry: [:0]const u8,
-    fragment_entry: [:0]const u8,
-};
-
 const EventResult = enum { app_continue, app_quit };
 
+/// Effectively to capture ESCAPE to quit
 fn handleEvent(event: *sdl.SDL_Event) EventResult {
     switch (event.type) {
         sdl.SDL_EVENT_QUIT => return .app_quit,
@@ -107,6 +100,14 @@ pub fn main() !void {
         sdl.SDL_ClaimWindowForGPUDevice(gpu, window),
     );
     defer sdl.SDL_ReleaseWindowFromGPUDevice(gpu, window);
+
+    const ShaderConfig = struct {
+        shader_format: sdl.SDL_GPUShaderFormat,
+        vertex_path: [:0]const u8,
+        fragment_path: [:0]const u8,
+        vertex_entry: [:0]const u8,
+        fragment_entry: [:0]const u8,
+    };
 
     const supported_formats = sdl.SDL_GetGPUShaderFormats(gpu);
     const shader_config: ShaderConfig = if (supported_formats & sdl.SDL_GPU_SHADERFORMAT_MSL > 0)
@@ -242,7 +243,7 @@ pub fn main() !void {
             setHotPixel(chip8_screen[0..], hot_index);
             framebuffer_dirty = true;
             needs_present = true;
-            // skip ahead of now by about 1 sec
+            // skip ahead of now by `update_interval_ns`
             while (now >= next_update_ns) {
                 next_update_ns = now + update_interval_ns;
             }
