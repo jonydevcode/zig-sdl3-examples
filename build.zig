@@ -68,4 +68,28 @@ pub fn build(b: *std.Build) void {
     if (b.args) |args| {
         run_snake_cmd.addArgs(args);
     }
+
+    const gpu_exe = b.addExecutable(.{
+        .name = "gpu",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/gpu/main.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    gpu_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
+    b.installArtifact(gpu_exe);
+    const run_gpu = b.step("run-gpu", "Run the example: gpu");
+    const run_gpu_cmd = b.addRunArtifact(gpu_exe);
+    run_gpu.dependOn(&run_gpu_cmd.step);
+    run_gpu_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_gpu_cmd.addArgs(args);
+    }
+
+    const check = b.step("check", "Check if the program compiles");
+    check.dependOn(&clear_exe.step);
+    check.dependOn(&primitives_exe.step);
+    check.dependOn(&snake_exe.step);
+    check.dependOn(&gpu_exe.step);
 }
