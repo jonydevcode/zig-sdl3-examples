@@ -1,8 +1,13 @@
 //! Lightweight adapter layer between Zig code and SDL3 function calls.
 //! The sole purpose of this layer is to normalise the error model,
 //! translating between SDL's return false + SDL_GetError() convention and Zig's !T model.
+//!
+//! 1 Jun 2026 - I've decided this is a terrible idea and I will not be
+//! following this convention further. This is because I've wasted so much tmie
+//! trying to wrangle the C ABI-compatible function signature to Zig native types.
+//! Leaving this here as a note to self.
 const std = @import("std");
-const sdl = @import("sdl3");
+const sdl = @import("sdl.zig").c;
 
 pub const SdlError = error{
     SdlFailure,

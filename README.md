@@ -7,6 +7,39 @@ I'm learning Zig. I have ported some of the SDL3 examples to
 Zig to learn how C bindings work. They are all done by hand. No
 LLM-generation was used in the code for this repo.
 
+![Snake](screenshots/03-snake.png)
+
 ## AI Use Disclosure
 
-The current contents of this repository were written without LLM/AI code generation. All AI usage in any form by contributors must be disclosed. You must state the tool you used along with the extent that the work was AI-assisted.
+The current contents of this repository were written without LLM/AI code generation. All AI usage in any form by contributors must be disclosed.
+
+## Getting Started
+
+### Dependencies
+
+- Zig 0.16
+- [castholm/SDL](https://github.com/castholm/SDL)
+
+### Executing
+
+```bash
+zig build run-clear
+zig build run-primitives
+zig build run-snake
+zig build run-gpu
+```
+
+## Acknowledgments
+
+- [zig](https://codeberg.org/ziglang/zig)
+- [castholm/SDL](https://github.com/castholm/SDL)
+
+## License
+
+Distributed under the MIT License. See [LICENSE](./LICENSE) for more information.
+
+## Screenshots
+
+![Clear](screenshots/01-clear.png)
+![Primitives](screenshots/02-primitives.png)
+![GPU](screenshots/04-gpu.png)

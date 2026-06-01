@@ -1,7 +1,8 @@
 const std = @import("std");
-const sdl = @import("sdl3");
 
 const Io = std.Io;
+
+const sdl = @import("sdl.zig").c;
 
 pub fn main(init: std.process.Init) void {
     const io = init.io;

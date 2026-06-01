@@ -1,5 +1,5 @@
 const std = @import("std");
-const sdl = @import("sdl3");
+const sdl = @import("sdl.zig").c;
 
 pub const SdlError = error{
     SdlFailure,

@@ -1,5 +1,5 @@
 const std = @import("std");
-const sdl = @import("sdl3");
+const sdl = @import("sdl.zig").c;
 const sdlx = @import("sdlx.zig");
 const SdlGpu = @import("SdlGpu.zig");
 const RGBA = SdlGpu.RGBA;
@@ -11,7 +11,7 @@ const chip8_screen_pixels = chip8_screen_width * chip8_screen_height;
 var chip8_screen = [_]bool{false} ** chip8_screen_pixels;
 
 // How big each CHIP-8 screen pixel should be on the display
-const window_scale = 20;
+const window_scale = 10;
 
 // How often to move the hot pixel in milliseconds
 const update_interval_ms = 16;

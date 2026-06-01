@@ -4,10 +4,11 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const sdl = b.dependency("sdl", .{
-        .optimize = optimize,
+    const sdl_dep = b.dependency("sdl", .{
         .target = target,
+        .optimize = optimize,
     });
+    const sdl_lib = sdl_dep.artifact("SDL3");
 
     const clear_exe = b.addExecutable(.{
         .name = "clear",
@@ -17,10 +18,8 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    clear_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
-
+    clear_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(clear_exe);
-
     const run_clear = b.step("run-clear", "Run the example: clear");
     const run_clear_cmd = b.addRunArtifact(clear_exe);
     run_clear.dependOn(&run_clear_cmd.step);
@@ -37,10 +36,8 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    primitives_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
-
+    primitives_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(primitives_exe);
-
     const run_primitives = b.step("run-primitives", "Run the example: primitives");
     const run_primitives_cmd = b.addRunArtifact(primitives_exe);
     run_primitives.dependOn(&run_primitives_cmd.step);
@@ -57,10 +54,8 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    snake_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
-
+    snake_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(snake_exe);
-
     const run_snake = b.step("run-snake", "Run the example: snake");
     const run_snake_cmd = b.addRunArtifact(snake_exe);
     run_snake.dependOn(&run_snake_cmd.step);
@@ -77,7 +72,7 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
-    gpu_exe.root_module.addImport("sdl3", sdl.module("sdl3"));
+    gpu_exe.root_module.linkLibrary(sdl_lib);
     b.installArtifact(gpu_exe);
     const run_gpu = b.step("run-gpu", "Run the example: gpu");
     const run_gpu_cmd = b.addRunArtifact(gpu_exe);
